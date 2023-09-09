@@ -1,26 +1,14 @@
 import Player from '@vimeo/player';
+import throttle from 'lodash.throttle';
 
-// Создаем Vimeo.Player после загрузки API
 const iframe = document.querySelector('iframe');
 const player = new Player(iframe);
+const savedTime = localStorage.getItem('videoplayer-current-time') || 0;
 
-let currentTimeInLocalStorage = null;
+player.on('timeupdate', throttle(onVideoTimeSave, 1000));
+player.setCurrentTime(savedTime);
 
-// Восстанавливаем время воспроизведения при загрузке страницы
-const savedTime = localStorage.getItem('videoplayer-current-time');
-if (savedTime !== null) {
-  const currentTime = parseFloat(savedTime);
-  currentTimeInLocalStorage = currentTime;
-  player.setCurrentTime(currentTime);
-} else {
-  console.log('Сохраненное время не найдено или не задано.');
+function onVideoTimeSave(evt) {
+  let currentTime = evt.seconds;
+  localStorage.setItem('videoplayer-current-time', currentTime);
 }
-
-player.on('timeupdate', function () {
-  // Сохраняем текущее время воспроизведения в локальное хранилище
-  player.getCurrentTime().then(function (timeupdate) {
-    if (currentTimeInLocalStorage === null) {
-      localStorage.setItem('videoplayer-current-time', timeupdate);
-    }
-  });
-});
