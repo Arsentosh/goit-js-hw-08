@@ -1,47 +1,35 @@
 import throttle from 'lodash.throttle';
 
-const STORAGE_KEY = 'feedback-form-state';
+const feedbackFormRef = document.querySelector('.feedback-form');
+const emailRef = document.querySelector('[name="email"]');
+const messageRef = document.querySelector('[name="message"]');
 
-const form = document.querySelector('.feedback-form');
-
-form.addEventListener('input', throttle(onFormInput, 500));
-form.addEventListener('submit', onFormSubmit);
-
-const formData = {};
-
-function onFormInput(event) {
-  formData[event.target.name] = event.target.value.trim();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+let formData = {};
+feedbackFormRef.addEventListener('input', throttle(localData, 500));
+function localData() {
+  formData = {
+    email: emailRef.value,
+    message: messageRef.value,
+  };
+  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
 }
 
-function populateInput(event) {
-  const savedInput = localStorage.getItem(STORAGE_KEY);
-  const parseObject = JSON.parse(savedInput);
-
-  if (savedInput) {
-    const emailInput = document.querySelector('input[name="email"]');
-    const messageInput = document.querySelector('textarea[name="message"]');
-
-    emailInput.value = parseObject.email || '';
-    messageInput.value = parseObject.message.trim() || '';
+function getLocalData() {
+  let localData = JSON.parse(localStorage.getItem('feedback-form-state'));
+  if (localData) {
+    emailRef.value = localData.email;
+    messageRef.value = localData.message;
   }
+  formData = localData;
 }
+getLocalData();
 
-populateInput();
-
-function onFormSubmit(event) {
-  event.preventDefault();
-
-  const formElements = event.currentTarget.elements;
-  const mail = formElements.email.value;
-  const message = formElements.message.value;
-
-  if (mail === '' || message.trim() === '') {
-    alert('Please fill in all the fields!');
-    return;
-  } else {
-    event.currentTarget.reset();
-    localStorage.removeItem(STORAGE_KEY);
+feedbackFormRef.addEventListener('submit', submitData);
+function submitData(e) {
+  e.preventDefault();
+  if (emailRef.value.trim() !== '' && messageRef.value.trim() !== '') {
     console.log(formData);
+    feedbackFormRef.reset();
+    localStorage.removeItem('feedback-form-state');
   }
 }
