@@ -1,57 +1,47 @@
-const form = document.querySelector('form');
-const input = document.querySelector('input');
-const textarea = document.querySelector('textarea');
+import throttle from 'lodash.throttle';
 
-// Function to clear local storage and form fields on form submission
-function handleSubmit(event) {
-  event.preventDefault(); // Prevent the form from actually submitting
+const STORAGE_KEY = 'feedback-form-state';
 
-  // Clear local storage
-  localStorage.removeItem('feedback-form-state');
+const form = document.querySelector('.feedback-form');
 
-  // Clear form fields
-  input.value = '';
-  textarea.value = '';
+form.addEventListener('input', throttle(onFormInput, 500));
+form.addEventListener('submit', onFormSubmit);
 
-  // Log the email and message values to the console
-  const feedbackData = {
-    email: input.value,
-    message: textarea.value,
-  };
-  console.log(feedbackData);
+const formData = {};
+
+function onFormInput(event) {
+  formData[event.target.name] = event.target.value.trim();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
 }
 
-// Add a submit event listener to the form
-form.addEventListener('submit', handleSubmit);
+function populateInput(event) {
+  const savedInput = localStorage.getItem(STORAGE_KEY);
+  const parseObject = JSON.parse(savedInput);
 
-// Function to populate form fields from local storage on page load
-function populateFormFromLocalStorage() {
-  const storedData = localStorage.getItem('feedback-form-state');
+  if (savedInput) {
+    const emailInput = document.querySelector('input[name="email"]');
+    const messageInput = document.querySelector('textarea[name="message"]');
 
-  if (storedData) {
-    const feedbackData = JSON.parse(storedData);
-    input.value = feedbackData.email || '';
-    textarea.value = feedbackData.message || '';
-  } else {
-    input.value = '';
-    textarea.value = '';
+    emailInput.value = parseObject.email || '';
+    messageInput.value = parseObject.message.trim() || '';
   }
 }
 
-// Add an event listener for when the page loads
-window.addEventListener('load', populateFormFromLocalStorage);
+populateInput();
 
-// Function to handle the 'input' event
-function handleInput() {
-  const feedbackData = {
-    email: input.value,
-    message: textarea.value,
-  };
+function onFormSubmit(event) {
+  event.preventDefault();
 
-  // Store the 'feedbackData' object in local storage under the key 'feedback-form-state'
-  localStorage.setItem('feedback-form-state', JSON.stringify(feedbackData));
+  const formElements = event.currentTarget.elements;
+  const mail = formElements.email.value;
+  const message = formElements.message.value;
+
+  if (mail === '' || message.trim() === '') {
+    alert('Please fill in all the fields!');
+    return;
+  } else {
+    event.currentTarget.reset();
+    localStorage.removeItem(STORAGE_KEY);
+    console.log(formData);
+  }
 }
-
-// Add 'input' event listeners to both the input and textarea elements
-input.addEventListener('input', handleInput);
-textarea.addEventListener('input', handleInput);
